@@ -1,0 +1,240 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collecte d'avis – Enquête de satisfaction</title>
+
+
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Icônes Bootstrap (optionnel) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- CSS personnalisé -->
+    <style>
+        /* Override / complément de Bootstrap */
+        body {
+            background: linear-gradient(135deg, #070707 0%, #070707 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border-bottom: none;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .btn-primary {
+            background-color: #b300ff;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .preview-avis {
+            background-color: #ffffff;
+            border-left: 4px solid #007bff;
+            font-style: italic;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        .invalid-feedback {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-lg border-0">
+                <div class="card-header text-center py-4">
+                    <h2><i class="bi bi-chat-dots-fill"></i> Donnez votre avis</h2>
+                    <p class="mb-0">Votre opinion nous aide à nous améliorer</p>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Formulaire Django (avec CSRF) -->
+                    <form method="post" id="feedbackForm" action="{% url 'collecte' %}">
+                        {% csrf_token %}
+
+                        <!-- Champ Nom -->
+                        <div class="mb-3">
+                            <label for="id_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+                            <input type="text" name="nom" id="id_nom" class="form-control" required>
+                            <div class="invalid-feedback" id="errorNom">Le nom est requis.</div>
+                        </div>
+
+                        <!-- Champ Email -->
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" id="id_email" class="form-control" required>
+                            <div class="invalid-feedback" id="errorEmail">Email invalide (ex: nom@domaine.com).</div>
+                        </div>
+
+                        <!-- Champ Avis -->
+                        <div class="mb-3">
+                            <label for="id_avis" class="form-label">Votre avis <span class="text-danger">*</span></label>
+                            <textarea name="avis" id="id_avis" rows="4" class="form-control" required></textarea>
+                            <div class="char-counter" id="charCounter">0 / 500 caractères</div>
+                            <div class="invalid-feedback" id="errorAvis">L'avis ne peut pas être vide.</div>
+                        </div>
+
+                        <!-- Aperçu en direct -->
+                        <div class="mb-3">
+                            <label class="form-label">Aperçu de votre avis :</label>
+                            <div id="previewAvis" class="p-3 rounded preview-avis">
+                                <em>Votre avis apparaîtra ici...</em>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2">
+                            <i class="bi bi-send-fill"></i> Envoyer mon avis
+                        </button>
+                    </form>
+
+                    <!-- Message de confirmation (AJAX optionnel) -->
+                    <div id="confirmationMessage" class="alert alert-success mt-3 d-none" role="alert">
+                        Merci ! Votre avis a bien été enregistré.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section des derniers avis (dynamique via Django) -->
+            <div class="card mt-5 shadow-sm">
+                <div class="card-header bg-white">
+                    <h4><i class="bi bi-list-ul"></i> Derniers avis</h4>
+                </div>
+                <div class="card-body" id="avisList">
+                    {% if derniers_avis %}
+                        {% for avis in derniers_avis %}
+                            <div class="border-bottom pb-3 mb-3">
+                                <strong>{{ avis.nom }}</strong>
+                                <small class="text-muted">({{ avis.date|date:"d/m/Y H:i" }})</small>
+                                <p class="mt-2">{{ avis.avis|truncatechars:150 }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Aucun avis pour le moment. Soyez le premier !</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS Bundle (avec Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Script personnalisé -->
+<script>
+    // Éléments DOM
+    const nomInput = document.getElementById('id_nom');
+    const emailInput = document.getElementById('id_email');
+    const avisTextarea = document.getElementById('id_avis');
+    const previewDiv = document.getElementById('previewAvis');
+    const charCounterSpan = document.getElementById('charCounter');
+    const form = document.getElementById('feedbackForm');
+    const confirmationMsg = document.getElementById('confirmationMessage');
+
+    // 1. Validation en temps réel
+    function validateNom() {
+        const nom = nomInput.value.trim();
+        if (nom.length === 0) {
+            nomInput.classList.add('is-invalid');
+            document.getElementById('errorNom').style.display = 'block';
+            return false;
+        } else {
+            nomInput.classList.remove('is-invalid');
+            document.getElementById('errorNom').style.display = 'none';
+            return true;
+        }
+    }
+
+    function validateEmail() {
+        const email = emailInput.value.trim();
+        const regex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+        if (!regex.test(email)) {
+            emailInput.classList.add('is-invalid');
+            document.getElementById('errorEmail').style.display = 'block';
+            return false;
+        } else {
+            emailInput.classList.remove('is-invalid');
+            document.getElementById('errorEmail').style.display = 'none';
+            return true;
+        }
+    }
+
+    function validateAvis() {
+        const avis = avisTextarea.value.trim();
+        if (avis.length === 0) {
+            avisTextarea.classList.add('is-invalid');
+            document.getElementById('errorAvis').style.display = 'block';
+            return false;
+        } else {
+            avisTextarea.classList.remove('is-invalid');
+            document.getElementById('errorAvis').style.display = 'none';
+            return true;
+        }
+    }
+
+    // Événements
+    nomInput.addEventListener('input', validateNom);
+    emailInput.addEventListener('input', validateEmail);
+    avisTextarea.addEventListener('input', function() {
+        validateAvis();
+        updatePreview();
+        updateCharCounter();
+    });
+
+    // 2. Aperçu dynamique
+    function updatePreview() {
+        let text = avisTextarea.value.trim();
+        if (text === "") {
+            previewDiv.innerHTML = "<em>Votre avis apparaîtra ici...</em>";
+        } else {
+            previewDiv.innerHTML = text.replace(/\n/g, '<br>');
+        }
+    }
+
+    // 3. Compteur de caractères
+    function updateCharCounter() {
+        const length = avisTextarea.value.length;
+        charCounterSpan.innerText = `${length} / 500 caractères`;
+        if (length > 500) {
+            charCounterSpan.classList.add('text-danger');
+            avisTextarea.classList.add('is-invalid');
+        } else {
+            charCounterSpan.classList.remove('text-danger');
+            if (length > 0) avisTextarea.classList.remove('is-invalid');
+        }
+    }
+
+    
+    // Initialisation des messages d'erreur cachés
+    document.getElementById('errorNom').style.display = 'none';
+    document.getElementById('errorEmail').style.display = 'none';
+    document.getElementById('errorAvis').style.display = 'none';
+</script>
+
+</body>
+</html>

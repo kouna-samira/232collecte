@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Enquête de satisfaction</title>
+    <style>
+        /* Reset et fond animé */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #6b8cce 100%);
+            background-attachment: fixed;
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Carte principale */
+        .hero {
+            text-align: center;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 2rem;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 40px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: fadeInUp 1.2s ease-out;
+        }
+
+        /* Grand titre animé */
+        .glowing-title {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFDEE9, #B5FFFC);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            animation: pulseGlow 3s infinite alternate;
+            text-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                text-shadow: 0 0 10px rgba(255,255,200,0.5);
+                background: linear-gradient(135deg, #FFDEE9, #B5FFFC);
+                background-clip: text;
+                -webkit-background-clip: text;
+            }
+            100% {
+                text-shadow: 0 0 30px rgba(255,255,200,0.9);
+                background: linear-gradient(135deg, #fdfbfb, #ebedee);
+                background-clip: text;
+                -webkit-background-clip: text;
+            }
+        }
+
+        /* Sous‑titre */
+        .subtitle {
+            font-size: 1.3rem;
+            margin: 1rem 0 2rem;
+            color: rgba(255,255,240,0.95);
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* Bouton stylisé */
+        .btn-glow {
+            display: inline-block;
+            background: white;
+            color: #1e3c72;
+            font-weight: bold;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: 0.3s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-glow:hover {
+            transform: scale(1.05);
+            background: #f0f0f0;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
+        }
+
+        /* Particules animées en arrière‑plan */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            animation: floatParticle 8s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Animation d’apparition */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .glowing-title {
+                font-size: 2.5rem;
+            }
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    <div class="hero">
+        <h1 class="glowing-title">Partagez votre expérience</h1>
+        <p class="subtitle">Votre avis compte — aidez‑nous à nous améliorer</p>
+        <a href="{% url 'collecte' %}" class="btn-glow">✨ Donnez votre avis ✨</a>
+        
+    </div>
+
+    <script>
+        // Génération de particules aléatoires
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 60;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDuration = `${Math.random() * 10 + 5}s`;
+                particle.style.animationDelay = `${Math.random() * 10}s`;
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+    </script>
+</body>
+</html>
